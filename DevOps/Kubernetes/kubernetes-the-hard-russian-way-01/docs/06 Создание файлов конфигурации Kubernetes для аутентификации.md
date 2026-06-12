@@ -1,4 +1,13 @@
 
+- [Файлы конфигурации Kubernetes для аутентификации](#файлы-конфигурации-kubernetes-для-аутентификации)
+- [Client Authentication Configs](#client-authentication-configs)
+  - [Создание kubelet Kubernetes Configuration Files](#создание-kubelet-kubernetes-configuration-files)
+  - [Создание kube-proxy Kubernetes Configuration File](#создание-kube-proxy-kubernetes-configuration-file)
+  - [Создание kube-controller-manager Kubernetes Configuration File](#создание-kube-controller-manager-kubernetes-configuration-file)
+  - [Создание kube-scheduler Kubernetes Configuration File](#создание-kube-scheduler-kubernetes-configuration-file)
+  - [Создание admin Kubernetes Configuration File](#создание-admin-kubernetes-configuration-file)
+- [Копирование Kubernetes Configuration Files](#копирование-kubernetes-configuration-files)
+
 
 ---
 
