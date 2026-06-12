@@ -29,7 +29,7 @@
 Скачаем файл `ca.conf`:
 
 ```bash
-wget https://raw.githubusercontent.com/it-0n/it0nsite/refs/heads/main/DevOps/Kubernetes/kubernetes-the-hard-russian-way-01/docs/ca.conf
+wget https://raw.githubusercontent.com/it-0n/it0nsite/refs/heads/main/DevOps/Kubernetes/kubernetes-the-hard-russian-way-01/configs/ca.conf
 ```
 
 Бегло просмотрите скачанный файл:
