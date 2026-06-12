@@ -1,3 +1,13 @@
+- [Подготовка](#подготовка)
+- [Настройка компонентов Kubernetes Control Plane](#настройка-компонентов-kubernetes-control-plane)
+  - [Установка бинарей Kubernetes](#установка-бинарей-kubernetes)
+  - [Кофигурирование the Kubernetes API Server](#кофигурирование-the-kubernetes-api-server)
+  - [Конфигурирование Kubernetes Controller Manager](#конфигурирование-kubernetes-controller-manager)
+  - [Конфигурирование Kubernetes Scheduler](#конфигурирование-kubernetes-scheduler)
+- [Запуск компонентов Kubernetes Control Plane](#запуск-компонентов-kubernetes-control-plane)
+- [Проверка работы Kubernetes Control Plane](#проверка-работы-kubernetes-control-plane)
+- [RBAC для авторизации Kubelet](#rbac-для-авторизации-kubelet)
+  - [Проверка:](#проверка)
 
 
 ---
