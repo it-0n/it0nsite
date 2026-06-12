@@ -1,6 +1,3 @@
-
----
-
 Pod’ы, назначенные на конкретный узел, получают IP-адрес из диапазона Pod CIDR этого узла. На этом этапе pod’ы ещё не могут обмениваться данными с pod’ами на других узлах, потому что не настроены сетевые [маршруты](https://cloud.google.com/compute/docs/vpc/routes).
 
 В этой лабораторной работе мы создадим маршрут для каждого worker-node, который будет связывать диапазон Pod CIDR этого узла с его внутренним IP-адресом.
@@ -9,9 +6,7 @@ Pod’ы, назначенные на конкретный узел, получ�
 
 # Настройка таблиц маршрутизации
 
-В этом разделе вы соберёте информацию, необходимую для создания маршрутов в VPC-сети `kubernetes-the-hard-russian-way-01`.
-
-И настроите таблицу маршрутизацию в кластере.
+В этом разделе вы соберёте информацию, необходимую для создания маршрутов в VPC-сети `kubernetes-the-hard-russian-way-01` и настроите таблицу маршрутизации в кластере.
 
 > Все команды из этого раздела нужно выполнять на `jumpbox` каталога `kthrw01`.
 
@@ -27,20 +22,81 @@ Pod’ы, назначенные на конкретный узел, получ�
 
 ```bash
 ssh root@server <<EOF
-  ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
-  ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
+# 1. Создаем изолированный сервис для маршрутов Kubernetes
+cat << 'INNER_EOF' > /etc/systemd/system/k8s-routes.service
+[Unit]
+Description=Add Kubernetes Static Routes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Используем запуск через оболочку, чтобы PATH сам нашел утилиту ip, и гасим ошибки "File exists"
+ExecStart=/bin/sh -c "ip route add ${NODE_0_SUBNET} via ${NODE_0_IP} 2>/dev/null || true"
+ExecStart=/bin/sh -c "ip route add ${NODE_1_SUBNET} via ${NODE_1_IP} 2>/dev/null || true"
+
+[Install]
+WantedBy=multi-user.target
+INNER_EOF
+
+# 2. Перезагружаем конфигурацию systemd
+systemctl daemon-reload
+
+# 3. Включаем сервис в автозагрузку и запускаем его прямо сейчас
+systemctl enable --now k8s-routes.service
 EOF
 ```
 
 ```bash
 ssh root@node-0 <<EOF
-  ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
+# 1. Создаем изолированный сервис для маршрута до node-1
+cat << 'INNER_EOF' > /etc/systemd/system/node-routes.service
+[Unit]
+Description=Add Persistent Route to Node 1
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c "ip route add ${NODE_1_SUBNET} via ${NODE_1_IP} 2>/dev/null || true"
+
+[Install]
+WantedBy=multi-user.target
+INNER_EOF
+
+# 2. Перезагружаем конфигурацию systemd
+systemctl daemon-reload
+
+# 3. Включаем сервис в автозагрузку и запускаем его прямо сейчас
+systemctl enable --now node-routes.service
 EOF
 ```
 
 ```bash
 ssh root@node-1 <<EOF
-  ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
+# 1. Создаем изолированный сервис для маршрута до node-0
+cat << 'INNER_EOF' > /etc/systemd/system/node-routes.service
+[Unit]
+Description=Add Persistent Route to Node 0
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c "ip route add ${NODE_0_SUBNET} via ${NODE_0_IP} 2>/dev/null || true"
+
+[Install]
+WantedBy=multi-user.target
+INNER_EOF
+
+# 2. Перезагружаем конфигурацию systemd
+systemctl daemon-reload
+
+# 3. Включаем сервис в автозагрузку и запускаем его прямо сейчас
+systemctl enable --now node-routes.service
 EOF
 ```
 
