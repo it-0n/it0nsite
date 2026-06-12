@@ -73,4 +73,174 @@
 - `etcd` — хранилище состояния кластера.
 
 
+# Client Authentication Configs
 
+В этом разделе мы сгенерируем файлы kubeconfig для `kubelet` и пользователя `admin`.
+
+> Все команды из этого раздела нужно выполнять на `jumpbox` каталога `kthrw01`.
+
+## Создание kubelet Kubernetes Configuration Files
+
+> При создании файлов kubeconfig для Kubelets необходимо использовать сертификат клиента, соответствующий имени узла Kubelet. Это гарантирует, что Kubelets должным образом авторизован [авторизатором узла Kubernetes](https://kubernetes.io/docs/reference/access-authn-authz/node/).
+
+
+```bash
+for host in node-0 node-1; do
+  kubectl config set-cluster kubernetes-the-hard-russian-way-01 \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=${host}.kubeconfig
+
+  kubectl config set-credentials system:node:${host} \
+    --client-certificate=${host}.crt \
+    --client-key=${host}.key \
+    --embed-certs=true \
+    --kubeconfig=${host}.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-russian-way-01 \
+    --user=system:node:${host} \
+    --kubeconfig=${host}.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=${host}.kubeconfig
+done
+```
+
+В резальтате создадуться два файла:
+
+```
+node-0.kubeconfig
+node-1.kubeconfig
+```
+
+## Создание kube-proxy Kubernetes Configuration File
+
+```bash
+kubectl config set-cluster kubernetes-the-hard-russian-way-01 \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=kube-proxy.kubeconfig
+
+kubectl config set-credentials system:kube-proxy \
+    --client-certificate=kube-proxy.crt \
+    --client-key=kube-proxy.key \
+    --embed-certs=true \
+    --kubeconfig=kube-proxy.kubeconfig
+
+kubectl config set-context default \
+    --cluster=kubernetes-the-hard-russian-way-01 \
+    --user=system:kube-proxy \
+    --kubeconfig=kube-proxy.kubeconfig
+
+kubectl config use-context default \
+    --kubeconfig=kube-proxy.kubeconfig
+```
+
+В результате будет создан файл `kube-proxy.kubeconfig`.
+
+## Создание kube-controller-manager Kubernetes Configuration File
+
+```bash
+kubectl config set-cluster kubernetes-the-hard-russian-way-01 \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=kube-controller-manager.kubeconfig
+
+kubectl config set-credentials system:kube-controller-manager \
+    --client-certificate=kube-controller-manager.crt \
+    --client-key=kube-controller-manager.key \
+    --embed-certs=true \
+    --kubeconfig=kube-controller-manager.kubeconfig
+
+kubectl config set-context default \
+    --cluster=kubernetes-the-hard-russian-way-01 \
+    --user=system:kube-controller-manager \
+    --kubeconfig=kube-controller-manager.kubeconfig
+
+kubectl config use-context default \
+    --kubeconfig=kube-controller-manager.kubeconfig
+```
+ В результате будет создан файл `kube-controller-manager.kubeconfig`.
+
+
+## Создание kube-scheduler Kubernetes Configuration File
+
+```bash
+kubectl config set-cluster kubernetes-the-hard-russian-way-01 \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443 \
+    --kubeconfig=kube-scheduler.kubeconfig
+
+kubectl config set-credentials system:kube-scheduler \
+    --client-certificate=kube-scheduler.crt \
+    --client-key=kube-scheduler.key \
+    --embed-certs=true \
+    --kubeconfig=kube-scheduler.kubeconfig
+
+kubectl config set-context default \
+    --cluster=kubernetes-the-hard-russian-way-01 \
+    --user=system:kube-scheduler \
+    --kubeconfig=kube-scheduler.kubeconfig
+
+kubectl config use-context default \
+    --kubeconfig=kube-scheduler.kubeconfig
+```
+
+ В результате будет создан файл `kube-scheduler.kubeconfig`.
+
+
+ ## Создание admin Kubernetes Configuration File
+
+ ```bash
+kubectl config set-cluster kubernetes-the-hard-russian-way-01 \
+    --certificate-authority=ca.crt \
+    --embed-certs=true \
+    --server=https://127.0.0.1:6443 \
+    --kubeconfig=admin.kubeconfig
+
+  kubectl config set-credentials admin \
+    --client-certificate=admin.crt \
+    --client-key=admin.key \
+    --embed-certs=true \
+    --kubeconfig=admin.kubeconfig
+
+  kubectl config set-context default \
+    --cluster=kubernetes-the-hard-russian-way-01 \
+    --user=admin \
+    --kubeconfig=admin.kubeconfig
+
+  kubectl config use-context default \
+    --kubeconfig=admin.kubeconfig
+```
+
+В результате будет создан файл `admin.kubeconfig`.
+
+# Копирование Kubernetes Configuration Files
+
+Копирование `kubelet` и `kube-proxy` kubeconfig files на `node-0` и `node-1`:
+
+```bash
+for host in node-0 node-1; do
+  ssh root@${host} "mkdir -p /var/lib/{kube-proxy,kubelet}"
+
+  scp kube-proxy.kubeconfig \
+    root@${host}:/var/lib/kube-proxy/kubeconfig \
+
+  scp ${host}.kubeconfig \
+    root@${host}:/var/lib/kubelet/kubeconfig
+done
+```
+
+Копирование `kube-controller-manager` и `kube-scheduler` kubeconfig files на  `server`:
+
+```bash
+scp admin.kubeconfig \
+  kube-controller-manager.kubeconfig \
+  kube-scheduler.kubeconfig \
+  root@server:~/
+```
